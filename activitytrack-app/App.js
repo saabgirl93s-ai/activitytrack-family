@@ -7,7 +7,9 @@ export default function App() {
   return (
     <View style={styles.container}>
       <Text style={styles.title}>ActivityTrack Family</Text>
-      <Text style={styles.subtitle}>Track kids activities, schedules, and budget.</Text>
+      <Text style={styles.subtitle}>
+        Track kids activities, schedules, and budget.
+      </Text>
 
       <View style={styles.card}>
         <Text style={styles.cardTitle}>Landon</Text>
@@ -15,10 +17,12 @@ export default function App() {
       </View>
 
       {showMessage && (
-        <Text style={{ marginBottom: 20 }}>Add Activity coming next 👇</Text>
+        <Text style={{ marginBottom: 20 }}>
+          Add Activity coming next 👇
+        </Text>
       )}
 
-      <TouchableOpacity 
+      <TouchableOpacity
         style={styles.button}
         onPress={() => setShowMessage(true)}
       >
