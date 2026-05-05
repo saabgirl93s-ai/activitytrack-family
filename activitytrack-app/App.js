@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { StyleSheet, Text, View, TouchableOpacity, TextInput } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function App() {
   const [showForm, setShowForm] = useState(false);
@@ -8,7 +9,18 @@ export default function App() {
   const [schedule, setSchedule] = useState('');
   const [activities, setActivities] = useState([]);
 
-  function saveActivity() {
+  useEffect(() => {
+    loadActivities();
+  }, []);
+
+  async function loadActivities() {
+    const data = await AsyncStorage.getItem('activities');
+    if (data) {
+      setActivities(JSON.parse(data));
+    }
+  }
+
+  async function saveActivity() {
     if (!activityName.trim()) return;
 
     const newActivity = {
@@ -18,7 +30,11 @@ export default function App() {
       schedule,
     };
 
-    setActivities([...activities, newActivity]);
+    const updated = [...activities, newActivity];
+    setActivities(updated);
+
+    await AsyncStorage.setItem('activities', JSON.stringify(updated));
+
     setActivityName('');
     setCost('');
     setSchedule('');
