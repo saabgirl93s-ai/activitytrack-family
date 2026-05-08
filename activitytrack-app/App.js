@@ -1,5 +1,11 @@
 import { useEffect, useState } from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, TextInput } from 'react-native';
+import {
+  StyleSheet,
+  Text,
+  View,
+  TouchableOpacity,
+  TextInput,
+} from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function App() {
@@ -7,6 +13,7 @@ export default function App() {
   const [activityName, setActivityName] = useState('');
   const [cost, setCost] = useState('');
   const [schedule, setSchedule] = useState('');
+  const [category, setCategory] = useState('');
   const [activities, setActivities] = useState([]);
 
   useEffect(() => {
@@ -15,9 +22,15 @@ export default function App() {
 
   async function loadActivities() {
     const data = await AsyncStorage.getItem('activities');
+
     if (data) {
       setActivities(JSON.parse(data));
     }
+  }
+
+  async function saveActivities(updatedActivities) {
+    setActivities(updatedActivities);
+    await AsyncStorage.setItem('activities', JSON.stringify(updatedActivities));
   }
 
   async function saveActivity() {
@@ -28,23 +41,41 @@ export default function App() {
       name: activityName,
       cost,
       schedule,
+      category,
     };
 
     const updated = [...activities, newActivity];
-    setActivities(updated);
 
-    await AsyncStorage.setItem('activities', JSON.stringify(updated));
+    await saveActivities(updated);
 
     setActivityName('');
     setCost('');
     setSchedule('');
+    setCategory('');
     setShowForm(false);
   }
+
+  async function deleteActivity(id) {
+    const updated = activities.filter((activity) => activity.id !== id);
+    await saveActivities(updated);
+  }
+
+  const monthlyTotal = activities.reduce((total, activity) => {
+    return total + Number(activity.cost || 0);
+  }, 0);
 
   return (
     <View style={styles.container}>
       <Text style={styles.title}>ActivityTrack Family</Text>
-      <Text style={styles.subtitle}>Track kids activities, schedules, and budget.</Text>
+
+      <Text style={styles.subtitle}>
+        Track kids activities, schedules, and budget.
+      </Text>
+
+      <View style={styles.totalCard}>
+        <Text style={styles.totalLabel}>Monthly Activity Total</Text>
+        <Text style={styles.totalAmount}>${monthlyTotal}</Text>
+      </View>
 
       <View style={styles.card}>
         <Text style={styles.cardTitle}>Landon</Text>
@@ -54,9 +85,24 @@ export default function App() {
         ) : (
           activities.map((activity) => (
             <View key={activity.id} style={styles.activityItem}>
-              <Text style={styles.activityName}>{activity.name}</Text>
-              <Text style={styles.cardText}>{activity.schedule}</Text>
-              <Text style={styles.cardText}>${activity.cost}</Text>
+              <View style={styles.activityHeader}>
+                <View>
+                  <Text style={styles.activityName}>{activity.name}</Text>
+                  <Text style={styles.cardText}>{activity.schedule}</Text>
+                  <Text style={styles.cardText}>${activity.cost}</Text>
+
+                  {activity.category ? (
+                    <Text style={styles.categoryText}>{activity.category}</Text>
+                  ) : null}
+                </View>
+
+                <TouchableOpacity
+                  style={styles.deleteButton}
+                  onPress={() => deleteActivity(activity.id)}
+                >
+                  <Text style={styles.deleteButtonText}>Delete</Text>
+                </TouchableOpacity>
+              </View>
             </View>
           ))
         )}
@@ -75,7 +121,7 @@ export default function App() {
 
           <TextInput
             style={styles.input}
-            placeholder="Cost"
+            placeholder="Monthly cost"
             value={cost}
             onChangeText={setCost}
             keyboardType="numeric"
@@ -88,13 +134,23 @@ export default function App() {
             onChangeText={setSchedule}
           />
 
+          <TextInput
+            style={styles.input}
+            placeholder="Category (Sports, Arts, Camp...)"
+            value={category}
+            onChangeText={setCategory}
+          />
+
           <TouchableOpacity style={styles.saveButton} onPress={saveActivity}>
             <Text style={styles.buttonText}>Save Activity</Text>
           </TouchableOpacity>
         </View>
       )}
 
-      <TouchableOpacity style={styles.button} onPress={() => setShowForm(!showForm)}>
+      <TouchableOpacity
+        style={styles.button}
+        onPress={() => setShowForm(!showForm)}
+      >
         <Text style={styles.buttonText}>
           {showForm ? 'Cancel' : '+ Add Activity'}
         </Text>
@@ -117,7 +173,23 @@ const styles = StyleSheet.create({
   },
   subtitle: {
     fontSize: 16,
-    marginBottom: 32,
+    marginBottom: 24,
+  },
+  totalCard: {
+    backgroundColor: '#222',
+    padding: 20,
+    borderRadius: 18,
+    marginBottom: 20,
+  },
+  totalLabel: {
+    color: '#bbb',
+    fontSize: 14,
+    marginBottom: 4,
+  },
+  totalAmount: {
+    color: 'white',
+    fontSize: 32,
+    fontWeight: '700',
   },
   card: {
     backgroundColor: 'white',
@@ -140,8 +212,33 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: '#eee',
   },
+  activityHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
   activityName: {
     fontSize: 17,
+    fontWeight: '700',
+  },
+  categoryText: {
+    marginTop: 6,
+    alignSelf: 'flex-start',
+    backgroundColor: '#d9e8d4',
+    paddingVertical: 4,
+    paddingHorizontal: 10,
+    borderRadius: 20,
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  deleteButton: {
+    backgroundColor: '#d9534f',
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 10,
+  },
+  deleteButtonText: {
+    color: 'white',
     fontWeight: '700',
   },
   form: {
